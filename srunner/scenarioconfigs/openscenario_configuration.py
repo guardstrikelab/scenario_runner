@@ -202,6 +202,8 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             else:
                 self.logger.warning(" Wrong map in use. Forcing reload of CARLA world")
                 self.client.load_world(self.town)
+                while self.client.get_world().get_map().name.split('/')[-1] != self.town:
+                    continue
                 world = self.client.get_world()
 
             CarlaDataProvider.set_world(world)
