@@ -3,6 +3,7 @@ import logging
 import carla
 from typing import Tuple, List
 
+from srunner.osc2_stdlib.environment import Environment
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
@@ -219,52 +220,48 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             function_name = node.modifier_name
             actor_name = node.actor
             arguments = self.visit_children(node)
+            position_args = []
+            keyword_args = {}
+            if isinstance(arguments, List):
+                arguments = flat_list(arguments)
+                for arg in arguments:
+                    if isinstance(arg, Tuple):
+                        if self.father_ins.variables.get(arg[0]) is not None:
+                            keyword_args[arg[0]] = self.father_ins.variables.get(arg[0])
+                        elif isinstance(arg[1], Physical):
+                            keyword_args[arg[0]] = arg[1].gen_physical_value()
+                        else:
+                            keyword_args[arg[0]] = arg[1]
+                    else:
+                        if self.father_ins.variables.get(arg) is not None:
+                            position_args.append(self.father_ins.variables.get(arg))
+                        elif isinstance(arg, Physical):
+                            position_args.append(arg.gen_physical_value())
+                        else:
+                            position_args.append(arg)
+            else:
+                if self.father_ins.variables.get(arguments) is not None:
+                    position_args.append(self.father_ins.variables.get(arguments))
+                elif isinstance(arguments, Physical):
+                    position_args.append(arguments.gen_physical_value())
+                else:
+                    position_args.append(arguments)
             if hasattr(self.father_ins.path, function_name):
                 path_function = getattr(self.father_ins.path, function_name)
-                position_args = []
-                keyword_args = {}
-                if isinstance(arguments, List):
-                    arguments = flat_list(arguments)
-                    for arg in arguments:
-                        if isinstance(arg, Tuple):
-                            if self.father_ins.variables.get(arg[0]) is not None:
-                                keyword_args[arg[0]] = self.father_ins.variables.get(arg[0])
-                            else:
-                                keyword_args[arg[0]] = arg[1]
-                        else:
-                            if self.father_ins.variables.get(arg) is not None:
-                                position_args.append(self.father_ins.variables.get(arg))
-                            else:
-                                position_args.append(arg)
-                else:
-                    if self.father_ins.variables.get(arguments) is not None:
-                        position_args.append(self.father_ins.variables.get(arguments))
-                    else:
-                        position_args.append(arguments)
                 path_function(*position_args, **keyword_args)
             if actor_name == "ego_vehicle":
                 if hasattr(vehicles.Vehicle, function_name):
-                    position_args = []
-                    keyword_args = {}
                     position_function = getattr(self.father_ins.ego_vehicles[0], function_name)
-
                     pos = misc.WorldPosition(0, 0, 0, 0, 0, 0)
                     position_cls = getattr(pos, "__init__")
-                    if isinstance(arguments, List):
-                        arguments = flat_list(arguments)
-                        for arg in arguments:
-                            if isinstance(arg, Tuple):
-                                if isinstance(arg[1], Physical):
-                                    keyword_args[arg[0]] = arg[1].gen_physical_value()
-                            else:
-                                if isinstance(arg, Physical):
-                                    position_args.append(arg.gen_physical_value())
-                    else:
-                        if isinstance(arguments, Physical):
-                            position_args.append(arguments.gen_physical_value())
                     position_cls(*position_args, **keyword_args)
                     position_function(pos)
                     self.father_ins.ego_vehicles[0].random_location = False
+            if actor_name == "environment":
+                environment = Environment(self.father_ins.weather)
+                if hasattr(environment, function_name):
+                    env_func = getattr(environment, function_name)
+                    env_func(*position_args, **keyword_args)
             """
             modifier_name = node.modifier_name
             arguments = self.visit_children(node)
@@ -318,7 +315,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             flat_arguments = flat_list(arguments)
             temp_stack = []
             for ex in flat_arguments:
-                if ex == '+' or ex == '-' or ex == '*' or ex == '/' or ex == '%':
+                if ex in ['+', '-', '*', '/', '%']:
                     right = temp_stack.pop()
                     left = temp_stack.pop()
                     expression = left + ' ' + ex + ' ' + right
@@ -415,6 +412,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
             for elem in arguments:
                 if elem[0] == 'factor':
                     factor = elem[1]
+
                 elif elem[0] == 'offset':
                     offset = elem[1]
             self.father_ins.unit_dict[node.unit_name] = UnitObject(node.unit_name,

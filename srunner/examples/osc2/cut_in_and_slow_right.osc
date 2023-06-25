@@ -34,22 +34,41 @@ scenario dut.cut_in_and_slow:
                 speed(10kph)
 
 scenario top:
+    # 设置地图与车道
     set_map("Town04")
     min_lane: int = 2
     path_min_driving_lanes(min_lane)
 
+    # 设置车辆
     ego_vehicle: Model3
     npc: Rubicon
     time_a: time = 30s
 
-    c: speeds
-
+    # 设置速度
     speed_a: velocity
     keep (default speed_a == 30kph)
+
+    # speed_d: velocity with: keep(it == 40kph)
+
     speed_b: velocity = 30kph
 
     speed_c: velocity = speeds.compute(x: 70kph, y:20kph)
 
+    # 设置天气
+    w: weather
+    keep(w.fog.visual_range == 150m) # 能见度
+    keep(w.rain.intensity == 10mps) # 降水量
+
+    environment.air(15.0celsius, 1050.0hPa, 0.65)
+    environment.air(temperature: 15.0celsius, pressure: 1050.0hPa, relative_humidity: 0.65)
+    environment.rain(20.0mmph)
+    environment.wind(15.0mps)
+    # environment.fog(45m)
+    environment.assign_celestial_position(environment.sun, 270deg, 90deg)
+    environment.datetime(1643764822)
+
+
+    # 执行场景
     do serial:
         # dut.cut_in_and_slow(a: time_a)
         dut.cut_in_and_slow(a: time_a, b: speed_a)

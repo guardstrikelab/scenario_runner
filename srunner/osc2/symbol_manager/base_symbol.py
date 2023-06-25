@@ -42,12 +42,7 @@ class BaseSymbol(Symbol):
                     else:
                         self.symbols[sub_sym.name] = sub_sym
             else:
-                if self.is_key_found(sym):
-                    sep = '#'
-                    name = sym.name.split(sep, 1)[0]
-                    msg = name + " is already defined!"
-                    LOG_ERROR(msg, ctx)
-                else:
+                if not self.is_key_found(sym):
                     self.symbols[sym.name] = sym
 
     def get_enclosing_scope(self):

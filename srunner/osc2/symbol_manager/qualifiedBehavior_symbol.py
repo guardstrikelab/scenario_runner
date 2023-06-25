@@ -38,9 +38,6 @@ class QualifiedBehaviorSymbol(BaseSymbol):
         if self.actor_name == self.behavior_name and self.actor_name:
             error_msg = "behaviorName:\"" + self.behavior_name + "\" can not be same with actorName!"
             LOG_ERROR(error_msg, ctx)
-        elif self.is_actor_name_defined() is not True:
-            error_msg = "actorName: " + self.actor_name + " is not defined!"
-            LOG_ERROR(error_msg, ctx)
         elif self.behavior_name == None:
             error_msg = "behaviourName can not be empty!"
             LOG_ERROR(error_msg, ctx)

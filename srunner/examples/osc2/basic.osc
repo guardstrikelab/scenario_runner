@@ -1,0 +1,103 @@
+# tag::library-physical-time[]
+type time is SI(s: 1)
+unit s           of time is SI(s: 1, factor: 1)
+unit hour        of time is SI(s: 1, factor: 3600)
+unit h           of time is SI(s: 1, factor: 3600)
+unit minute      of time is SI(s: 1, factor: 60)
+unit min         of time is SI(s: 1, factor: 60)
+# end::library-physical-time[]
+
+# tag::library-physical-length[]
+type length is SI(m: 1)
+unit m          of length is SI(m: 1, factor: 1)
+unit meter      of length is SI(m: 1, factor: 1)
+unit km         of length is SI(m: 1, factor: 1000)
+# end::library-physical-length[]
+
+# tag::library-physical-velocity[]
+type velocity is SI(m: 1, s: -1)
+unit meter_per_second    of velocity is SI(m: 1, s: -1, factor: 1)
+unit mps                 of velocity is SI(m: 1, s: -1, factor: 1)
+unit kilometer_per_hour  of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kmph                of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit kph                 of velocity is SI(m: 1, s: -1, factor: 0.277777778)
+unit mile_per_hour       of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit mph                 of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit miph                of velocity is SI(m: 1, s: -1, factor: 0.447038889)
+unit mmph                of velocity is SI(m: 1, s: -1, factor: 0.000000278)
+unit millimeter_per_hour of velocity is SI(m: 1, s: -1, factor: 0.000000278)
+# end::library-physical-velocity[]
+
+# tag::library-physical-temperature[]
+type temperature is SI(K: 1)
+unit K          of temperature is SI(K: 1, factor: 1)
+unit kelvin     of temperature is SI(K: 1, factor: 1)
+unit celsius    of temperature is SI(K: 1, factor: 1, offset: 273.15)
+unit C          of temperature is SI(K: 1, factor: 1, offset: 273.15)
+unit fahrenheit of temperature is SI(K: 1, factor: 0.555555556, offset: 255.372222222)
+unit F          of temperature is SI(K: 1, factor: 0.555555556, offset: 255.372222222)
+# end::library-physical-temperature[]
+
+# tag::library-physical-pressure[]
+type pressure is SI(kg: 1, m: -1, s: -2)
+unit newton_per_meter_sqr of pressure is SI(kg: 1, m: -1, s: -2, factor: 1)
+unit Pa                   of pressure is SI(kg: 1, m: -1, s: -2, factor: 1)
+unit pascal               of pressure is SI(kg: 1, m: -1, s: -2, factor: 1)
+unit hPa                  of pressure is SI(kg: 1, m: -1, s: -2, factor: 100)
+unit atm                  of pressure is SI(kg: 1, m: -1, s: -2, factor: 101325)
+# end::library-physical-pressure[]
+
+# tag::library-physical-angle[]
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 57.295779513)
+unit deg    of angle is SI(rad: 1, factor: 57.295779513)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+# end::library-physical-angle[]
+
+enum directionality: [
+    uni_direction,           # A traffic_participant can move legally in only one direction along the s-axis.
+    longitudinal,            # Usually applies to lane_type driving and vru_vehicles
+    bi_direction,            # A traffic_participant can move legally in both directions along the longitudinal s-axis. Usually applies to lane_type driving and vru_vehicles
+    split,                   # Applies for multi-lane elements: there are lanes with opposing uni_direction traffic flow within the route
+    free,                    # A traffic_participant can legally move in any direction (longitudinal or lateral). Usually applies to lane_type pedestrian or lane_use mix_traffic_vru
+    none,                    # No expected traffic flow. Usually applies to lane_type non_driving
+    other]                   # Other type of directionality
+
+enum distance_direction: [
+    longitudinal,          # Measure distance in the x-coordinate. Positive means that the `reference` is in front of the `physical_object` that calls the method.
+    lateral]               # Measure distance in the y-coordinate. Positive means that the `reference` is to the left of the `physical_object` that calls the method.
+
+enum distance_mode: [
+    reference_points,      # Measures the distance between the reference points.
+    bounding_boxes]        # Measures the distance between the bounding boxes.
+
+struct fog:
+    visual_range: length                 # Mandatory: Value of optical range of visible light in the standard setting, which corresponds to a certain density of fog.
+
+struct air:
+    temperature: temperature             # Optional: Temperature on ground level.
+    atmospheric_pressure: pressure       # Optional: Atmospheric pressure on ground level.
+    relative_humidity: float             # Optional: Relative humidity on ground level.
+
+struct precipitation:
+    intensity: velocity                     # Optional: Global intensity of precipitation given as volumetric flux. In case of (partially) solid precipitation, the equivalent melted volume shall be considered. Note that volumetric flux is describing a volume flow across an area, but after reduction the unit results in the same unit as for speeds. As of now it is not possible in
+
+struct weather:
+    fog: fog                             # Optional: See struct fog
+    rain: precipitation
+
+actor osc_actor
+
+actor environment inherits osc_actor
+
+action osc_actor.osc_action
+
+action environment.action_for_environment inherits osc_actor.osc_action
+
+action environment.fog inherits environment.action_for_environment:
+    visual_range: length
+
+actor dut
+actor Model3
+actor Rubicon

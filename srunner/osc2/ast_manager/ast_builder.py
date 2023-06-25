@@ -952,9 +952,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
 
         if scope:
             pass
-        else:
-            msg = "Type name: " + name + " is not defined!"
-            LOG_ERROR(msg, ctx.start)
 
     # Exit a parse tree produced by OpenSCENARIO2Parser#typeName.
     def exitTypeName(self, ctx: OpenSCENARIO2Parser.TypeNameContext):
@@ -2204,9 +2201,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
             if scope is None:
                 if self.__current_scope.resolve(name):
                     scope = self.__current_scope.resolve(name)
-                else:
-                    msg = name + " is not defined!"
-                    LOG_ERROR(msg, ctx.start)
             else:
                 if issubclass(type(scope), TypedSymbol):
                     if self.__current_scope.resolve(scope.type):
@@ -2214,12 +2208,6 @@ class ASTBuilder(OpenSCENARIO2Listener):
                     if name in scope.symbols:
                         if scope.symbols[name].value:
                             scope = scope.symbols[name].value
-                        else:
-                            msg = name + ": value is None!"
-                            LOG_ERROR(msg, ctx.start)
-                    else:
-                        msg = name + " is not defined!"
-                        LOG_ERROR(msg, ctx.start)
                 else:
                     scope = self.__current_scope.resolve(scope)
 
