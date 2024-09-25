@@ -12,6 +12,7 @@ import carla
 import srunner.osc2_stdlib.misc_object as misc
 import srunner.osc2_stdlib.variables as variable
 import srunner.osc2_stdlib.vehicle as vehicles
+import srunner.osc2_stdlib.pedestrian as pedestrians
 from srunner.osc2.ast_manager import ast_node
 from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
 from srunner.osc2_dm.physical_object import *
@@ -35,6 +36,13 @@ vehicle_type = ['Car', 'Model3', 'Mkz2017', 'Carlacola', 'Rubicon', 'TT', 'A2', 
                 'Sprinter', 'Microlino', 'Cooper_s', 'Micra', 'Patrol', 'Patrol2021', 'Leon', 'Cybertruck', 'Prius',
                 'Zx125', 'T2', 'T22021', 'Yzf']
 
+person_type = ['Walker01', 'Walker02', 'Walker03', 'Walker04', 'Walker05', 'Walker06', 'Walker07', 'Walker08', 'Walker09',
+               'Walker10', 'Walker11', 'Walker12', 'Walker13', 'Walker14', 'Walker15', 'Walker16', 'Walker17', 'Walker18',
+               'Walker19', 'Walker20', 'Walker21', 'Walker22', 'Walker23', 'Walker24', 'Walker25', 'Walker26', 'Walker27',
+               'Walker28', 'Walker29', 'Walker30', 'Walker31', 'Walker32', 'Walker33', 'Walker34', 'Walker35', 'Walker36',
+               'Walker37', 'Walker38', 'Walker39', 'Walker40', 'Walker41', 'Walker42', 'Walker43', 'Walker44', 'Walker45',
+               'Walker46', 'Walker47', 'Walker48']
+
 
 def flat_list(list_of_lists):
     if len(list_of_lists) == 0:
@@ -56,6 +64,7 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
         self.path = Path
         self.other_actors = []
         self.ego_vehicles = []
+        self.walkers = []
         self.all_actors = {}
         self.variables = {}
         self.unit_dict = {}
@@ -80,6 +89,11 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
     def add_other_actors(self, npc: vehicles.Vehicle):
         self.other_actors.append(npc)
         self.all_actors[npc.get_name()] = npc
+
+    def add_walker(self, person: pedestrians.Pedestrian):
+        self.walkers.append(person)
+        self.other_actors.append(person)
+        self.all_actors[person.get_name()] = person
 
     def store_variable(self, vary):
         variable.Variable.set_arg(vary)
@@ -113,6 +127,11 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                         self.father_ins.add_ego_vehicles(v_ins)
                     else:
                         self.father_ins.add_other_actors(v_ins)
+                elif para_type in person_type:
+                    pedestrian_class = getattr(pedestrians, para_type)
+                    p_ins = pedestrian_class()
+                    p_ins.set_name(para_name)
+                    self.father_ins.add_walker(p_ins)
                 self.father_ins.variables[para_name] = para_type
             self.father_ins.store_variable(self.father_ins.variables)
 
@@ -172,6 +191,11 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                         self.father_ins.add_ego_vehicles(v_ins)
                     else:
                         self.father_ins.add_other_actors(v_ins)
+                elif para_type in person_type:
+                    pedestrian_class = getattr(pedestrians, para_type)
+                    p_ins = pedestrian_class()
+                    p_ins.set_name(para_name)
+                    self.father_ins.add_walker(p_ins)
                 self.father_ins.variables[para_name] = para_type
             self.father_ins.store_variable(self.father_ins.variables)
 
