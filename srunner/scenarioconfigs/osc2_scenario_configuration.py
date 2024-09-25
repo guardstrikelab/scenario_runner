@@ -29,7 +29,11 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 # OSC2
 from srunner.tools.osc2_helper import OSC2Helper
 
-vehicle_type = ["Car", "Model3", "Mkz2017", "Carlacola", "Rubicon"]
+vehicle_type = ['Car', 'Model3', 'Mkz2017', 'Carlacola', 'Rubicon', 'TT', 'A2', 'Etron', 'Crossbike', 'GrandTourer',
+                'Firetruck', 'Impala', 'C3', 'Century', 'Charger2020', 'Charger_police', 'Charger_police2020',
+                'Ambulance', 'Crown', 'Mustang', 'Omafiets', 'Low_rider', 'Ninja', 'Mkz2020', 'Coupe', 'Coupe2020',
+                'Sprinter', 'Microlino', 'Cooper_s', 'Micra', 'Patrol', 'Patrol2021', 'Leon', 'Cybertruck', 'Prius',
+                'Zx125', 'T2', 'T22021', 'Yzf']
 
 
 def flat_list(list_of_lists):
