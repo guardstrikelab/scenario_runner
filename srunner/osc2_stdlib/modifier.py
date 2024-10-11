@@ -156,3 +156,128 @@ class AccelerationModifier(Modifier):
 
     def get_accelerate(self):
         return self.args["acceleration"]
+
+
+class LateralModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_distance(self):
+        dist = self.args["distance"]
+        if isinstance(dist, Physical):
+            return dist
+        else:
+            print(
+                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
+
+    def get_refer_car(self):
+        if self.args.get("right_of"):
+            return self.args.get("right_of"), "right_of"
+        elif self.args.get("left_of"):
+            return self.args.get("left_of"), "left_of"
+        elif self.args.get("same_as"):
+            return self.args.get("same_as"), "same_as"
+        elif self.args.get("side_of"):
+            return self.args.get("side_of"), self.args.get("side")
+        else:
+            return None
+
+    def get_side(self):
+        for value in self.args.values():
+            if value == 'right':
+                return 'right'
+            elif value == 'left':
+                return 'left'
+        else:
+            print('LateralModifier has no such position define')
+
+
+class YawModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_angle(self):
+        dist = self.args["angle"]
+        if isinstance(dist, Physical):
+            return dist
+        else:
+            print(
+                "[Error] 'angle' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
+
+
+class OrientationModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_yaw(self):
+        return self.args["yaw"]
+
+    def get_pitch(self):
+        return self.args["pitch"]
+
+    def get_roll(self):
+        return self.args["roll"]
+
+
+class AloneModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_route(self):
+        return self.args["route"]
+
+
+class AloneTrajectoryModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_trajectory(self):
+        return self.args["trajectory"]
+
+
+class DistanceModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_distance(self):
+        dist = self.args["distance"]
+        if isinstance(dist, Physical):
+            return dist
+        else:
+            print(
+                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
+
+
+class PhysicalMovementModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_option(self):
+        if self.args.get("prefer_physical"):
+            return self.args.get("prefer_physical"), "prefer_physical"
+        elif self.args.get("prefer_non_physical"):
+            return self.args.get("prefer_non_physical"), "prefer_non_physical"
+        elif self.args.get("must_be_physical "): #default?
+            return self.args.get("must_be_physical "), "must_be_physical "
+        else:
+            return
+
+
+class AvoidCollisionsModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_bool(self):
+        if self.args.get("false"):
+            return self.args.get("false"), "false"
+        elif self.args.get("true"):
+            return self.args.get("true"), "true"
+        else:
+            return
+
