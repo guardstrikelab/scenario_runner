@@ -184,14 +184,8 @@ class LateralModifier(Modifier):
         else:
             return None
 
-    def get_side(self):
-        for value in self.args.values():
-            if value == 'right':
-                return 'right'
-            elif value == 'left':
-                return 'left'
-        else:
-            print('LateralModifier has no such position define')
+    def get_trigger_point(self):
+        return self.args.get("at", "all")
 
 
 class YawModifier(Modifier):

@@ -30,6 +30,7 @@ from srunner.osc2_stdlib.modifier import (
     LaneModifier,
     PositionModifier,
     SpeedModifier,
+    LateralModifier,
 )
 
 # OSC2
@@ -798,7 +799,6 @@ class OSC2Scenario(BasicScenario):
 
                     elif modifier_name == "position":
                         modifier_ins = PositionModifier(actor, modifier_name)
-                        keyword_args = {}
 
                         keyword_args = {}
                         if isinstance(arguments, list):
@@ -810,7 +810,7 @@ class OSC2Scenario(BasicScenario):
                                     keyword_args["distance"] = arg
                         elif isinstance(arguments, tuple):
                             keyword_args[arguments[0]] = arguments[1]
-                        elif isinstance(arg, Physical):
+                        elif isinstance(arguments, Physical): # 原本是arg，改为arguments
                             keyword_args["distance"] = arguments
                         else:
                             raise NotImplementedError(
@@ -907,6 +907,58 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins.set_args(keyword_args)
 
                         location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'keep_position':
+                        actor_object = CarlaDataProvider.get_actor_by_name(actor)
+                        car_driving = WaypointFollower(actor_object)
+                        actor_drive.add_child(car_driving)
+                        behavior.add_child(actor_drive)
+                        print("Target keep position")
+
+                    elif modifier_name == 'keep_speed':
+                        actor_object = CarlaDataProvider.get_actor_by_name(actor)
+                        car_driving = WaypointFollower(actor_object)
+                        actor_drive.add_child(car_driving)
+                        behavior.add_child(actor_drive)
+                        print("Target keep speed")
+
+                    elif modifier_name == 'lateral':
+                        modifier_ins = LateralModifier(actor, modifier_name)
+                        keyword_args = {}
+                        if isinstance(arguments, list):
+                            arguments = OSC2Helper.flat_list(arguments)
+                            for arg in arguments:
+                                if isinstance(arg, Tuple):
+                                    keyword_args[arg[0]] = arg[1]
+                                else:
+                                    keyword_args["distance"] = str(arg)
+                        elif isinstance(arguments, tuple):
+                            keyword_args[arguments[0]] = arguments[1]
+                        elif isinstance(arguments, Physical):
+                            keyword_args["distance"] = arguments
+                        else:
+                            raise NotImplementedError(
+                                f"no implentment argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'yaw':
+                        # yaw(angle: angle
+                        # [, <standard-movement-parameters>])
+                        pass
+                    elif modifier_name == 'orientation':
+                        pass
+                    elif modifier_name == 'alone':
+                        pass
+                    elif modifier_name == 'along_trajectory':
+                        pass
+                    elif modifier_name == 'distance':
+                        pass
+                    elif modifier_name == 'physical_movement':
+                        pass
+                    elif modifier_name == 'avoid_collisions':
+                        pass
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -949,13 +1001,9 @@ class OSC2Scenario(BasicScenario):
                 and modifier_name not in dir(self.father_ins.config.path)
                 and modifier_name
                 not in (
-                    "speed",
-                    "lane",
-                    "position",
-                    "acceleration",
-                    "keep_lane",
-                    "change_speed",
-                    "change_lane",
+                    'speed', 'lane', 'position', 'acceleration', 'keep_lane', 'change_speed', 'change_lane',
+                    'keep_position', 'keep_speed', 'lateral', 'yaw', 'orientation', 'alone', 'along_trajectory',
+                    'distance', 'physical_movement', 'avoid_collisions'
                 )
             ):
                 line, column = node.get_loc()
