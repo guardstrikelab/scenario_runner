@@ -1,5 +1,6 @@
 import random
 import sys
+from time import sleep
 
 from srunner.osc2_dm.physical_types import Physical
 from srunner.osc2_stdlib.misc_object import AVCarSide, ScenarioEvent
@@ -193,14 +194,16 @@ class YawModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_angle(self):
-        dist = self.args["angle"]
-        if isinstance(dist, Physical):
-            return dist
+        if(
+                self.args["angle"][0] != "[" and self.args["angle"][-1] != "]"
+        ):
+            return int(float(self.args["angle"]))
         else:
-            print(
-                "[Error] 'angle' parameter of PositionModifier must be 'Physical' type"
-            )
-            sys.exit(1)
+            values = self.args["lane_changes"][1:-1].split("..")
+            start = int(float(values[0]))
+            end = int(float(values[1]))
+            value = random.randint(start, end)
+            return value
 
 
 class OrientationModifier(Modifier):
@@ -208,21 +211,68 @@ class OrientationModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_yaw(self):
-        return self.args["yaw"]
+        if (
+                self.args["yaw"][0] != "[" and self.args["yaw"][-1] != "]"
+        ):
+            return int(float(self.args["yaw"]))
+        else:
+            values = self.args["yaw"][1:-1].split("..")
+            start = int(float(values[0]))
+            end = int(float(values[1]))
+            value = random.randint(start, end)
+            return value
 
     def get_pitch(self):
-        return self.args["pitch"]
+        if (
+                self.args["pitch"][0] != "[" and self.args["pitch"][-1] != "]"
+        ):
+            return int(float(self.args["pitch"]))
+        else:
+            values = self.args["pitch"][1:-1].split("..")
+            start = int(float(values[0]))
+            end = int(float(values[1]))
+            value = random.randint(start, end)
+            return value
 
     def get_roll(self):
-        return self.args["roll"]
+        if (
+                self.args["roll"][0] != "[" and self.args["roll"][-1] != "]"
+        ):
+            return int(float(self.args["roll"]))
+        else:
+            values = self.args["roll"][1:-1].split("..")
+            start = int(float(values[0]))
+            end = int(float(values[1]))
+            value = random.randint(start, end)
+            return value
 
 
-class AloneModifier(Modifier):
+class AlongModifier(Modifier):
     def __init__(self, actor_name: str, name: str) -> None:
         super().__init__(actor_name, name)
 
     def get_route(self):
         return self.args["route"]
+
+    def get_start(self):
+        start_offset = self.args["start_offset"]
+        if isinstance(start_offset, Physical):
+            return start_offset
+        else:
+            print(
+                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
+
+    def get_end(self):
+        end_offset = self.args["end_offset"]
+        if isinstance(end_offset, Physical):
+            return end_offset
+        else:
+            print(
+                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
 
 
 class AloneTrajectoryModifier(Modifier):
@@ -232,15 +282,20 @@ class AloneTrajectoryModifier(Modifier):
     def get_trajectory(self):
         return self.args["trajectory"]
 
+    def get_start(self):
+        start_offset = self.args["start_offset"]
+        if isinstance(start_offset, Physical):
+            return start_offset
+        else:
+            print(
+                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+            )
+            sys.exit(1)
 
-class DistanceModifier(Modifier):
-    def __init__(self, actor_name: str, name: str) -> None:
-        super().__init__(actor_name, name)
-
-    def get_distance(self):
-        dist = self.args["distance"]
-        if isinstance(dist, Physical):
-            return dist
+    def get_end(self):
+        end_offset = self.args["end_offset"]
+        if isinstance(end_offset, Physical):
+            return end_offset
         else:
             print(
                 "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
@@ -248,19 +303,30 @@ class DistanceModifier(Modifier):
             sys.exit(1)
 
 
+class DistanceModifier(Modifier):
+    def __init__(self, actor_name: str, name: str) -> None:
+        super().__init__(actor_name, name)
+
+    def get_distance(self):
+        if (
+                self.args["distance"][0] != "["
+                and self.args["distance"][-1] != "]"
+        ):
+            return int(float(self.args["distance"]))
+        else:
+            values = self.args["distance"][1:-1].split("..")
+            start = int(float(values[0]))
+            end = int(float(values[1]))
+            value = random.randint(start, end)
+            return value
+
+
 class PhysicalMovementModifier(Modifier):
     def __init__(self, actor_name: str, name: str) -> None:
         super().__init__(actor_name, name)
 
     def get_option(self):
-        if self.args.get("prefer_physical"):
-            return self.args.get("prefer_physical"), "prefer_physical"
-        elif self.args.get("prefer_non_physical"):
-            return self.args.get("prefer_non_physical"), "prefer_non_physical"
-        elif self.args.get("must_be_physical "): #default?
-            return self.args.get("must_be_physical "), "must_be_physical "
-        else:
-            return
+        return self.args["options"]
 
 
 class AvoidCollisionsModifier(Modifier):
@@ -268,10 +334,5 @@ class AvoidCollisionsModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_bool(self):
-        if self.args.get("false"):
-            return self.args.get("false"), "false"
-        elif self.args.get("true"):
-            return self.args.get("true"), "true"
-        else:
-            return
+        return self.args["bool"]
 
