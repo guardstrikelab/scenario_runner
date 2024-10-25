@@ -275,7 +275,7 @@ class AlongModifier(Modifier):
             sys.exit(1)
 
 
-class AloneTrajectoryModifier(Modifier):
+class AlongTrajectoryModifier(Modifier):
     def __init__(self, actor_name: str, name: str) -> None:
         super().__init__(actor_name, name)
 

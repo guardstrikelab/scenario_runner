@@ -32,7 +32,7 @@ from srunner.osc2_stdlib.modifier import (
     LaneModifier,
     PositionModifier,
     SpeedModifier,
-    LateralModifier, YawModifier, OrientationModifier, AlongModifier, AloneTrajectoryModifier, DistanceModifier,
+    LateralModifier, YawModifier, OrientationModifier, AlongModifier, AlongTrajectoryModifier, DistanceModifier,
     PhysicalMovementModifier, AvoidCollisionsModifier,
 )
 
@@ -197,6 +197,12 @@ def process_speed_modifier(
 
             father_tree.add_child(uniform_accelerate_speed)
             father_tree.add_child(car_driving)
+        elif isinstance(modifier, AvoidCollisionsModifier):
+            ac = modifier.get_bool()
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            car_driving = WaypointFollower(actor, avoid_collision=ac)
+            father_tree.add_child(car_driving)
+            print(f"change status of avoid_collisions to {ac}")
         else:
             LOG_WARNING("not implement modifier")
 
@@ -1002,7 +1008,7 @@ class OSC2Scenario(BasicScenario):
 
                     # 不知道和alone的区别在哪，一个是现有道路，另一个是预定轨迹？
                     elif modifier_name == 'along_trajectory':
-                        modifier_ins = AloneTrajectoryModifier(actor, modifier_name)
+                        modifier_ins = AlongTrajectoryModifier(actor, modifier_name)
                         keyword_args = {}
                         if isinstance(arguments, list):
                             arguments = OSC2Helper.flat_list(arguments)
@@ -1051,16 +1057,16 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins = AvoidCollisionsModifier(actor, modifier_name)
                         keyword_args = {}
                         arguments = str(arguments)
-                        if arguments == "false":
+                        if arguments == "False":
                             keyword_args["bool"] = False
-                        elif arguments == "true":
+                        elif arguments == "True":
                             keyword_args["bool"] = True
                         else:
                             raise NotImplementedError(
                                 f"no implement argument of {modifier_name}"
                             )
                         modifier_ins.set_args(keyword_args)
-                        # 同样是修改状态的
+                        speed_modifiers.append(modifier_ins)
 
                     else:
                         raise NotImplementedError(
