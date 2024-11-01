@@ -169,7 +169,7 @@ class LateralModifier(Modifier):
             return dist
         else:
             print(
-                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+                "[Error] 'distance' parameter of LateralModifier must be 'Physical' type"
             )
             sys.exit(1)
 
@@ -178,8 +178,6 @@ class LateralModifier(Modifier):
             return self.args.get("right_of"), "right_of"
         elif self.args.get("left_of"):
             return self.args.get("left_of"), "left_of"
-        elif self.args.get("same_as"):
-            return self.args.get("same_as"), "same_as"
         elif self.args.get("side_of"):
             return self.args.get("side_of"), self.args.get("side")
         else:
@@ -211,7 +209,9 @@ class OrientationModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_yaw(self):
-        if (
+        if self.args["yaw"] is None:
+            return 0
+        elif (
                 self.args["yaw"][0] != "[" and self.args["yaw"][-1] != "]"
         ):
             return int(float(self.args["yaw"]))
@@ -223,7 +223,9 @@ class OrientationModifier(Modifier):
             return value
 
     def get_pitch(self):
-        if (
+        if self.args["pitch"] is None:
+            return 0
+        elif (
                 self.args["pitch"][0] != "[" and self.args["pitch"][-1] != "]"
         ):
             return int(float(self.args["pitch"]))
@@ -235,7 +237,9 @@ class OrientationModifier(Modifier):
             return value
 
     def get_roll(self):
-        if (
+        if self.args["roll"] is None:
+            return 0
+        elif (
                 self.args["roll"][0] != "[" and self.args["roll"][-1] != "]"
         ):
             return int(float(self.args["roll"]))
@@ -326,7 +330,7 @@ class PhysicalMovementModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_option(self):
-        return self.args["options"]
+        return self.args["option"]
 
 
 class AvoidCollisionsModifier(Modifier):

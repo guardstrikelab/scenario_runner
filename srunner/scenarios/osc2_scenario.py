@@ -47,7 +47,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     LaneChange,
     UniformAcceleration,
     WaypointFollower,
-    calculate_distance,
+    calculate_distance, ChangeActorLateralMotion, ChangeActorLaneOffset,
 )
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
@@ -236,6 +236,57 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             father_tree.add_child(continue_drive)
             print("END of change lane--")
             return
+        elif isinstance(modifier, LateralModifier):
+            later_distance = modifier.get_distance()
+            relative_car_name, location = modifier.get_refer_car()
+            relative_car_conf = config.get_car_config(relative_car_name)
+            relative_car_location = relative_car_conf.get_transform().location
+            if location == "left_of":
+                npc_car_lateral_dis = later_distance.num
+            elif location == "right_of":
+                npc_car_lateral_dis = -1 * later_distance.num
+            npc_car_location = relative_car_location
+            npc_car_location.x = npc_car_location.x + npc_car_lateral_dis
+            npc_car_wp = CarlaDataProvider.get_map().get_waypoint(npc_car_location)
+            npc_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_lateral = ActorTransformSetter(actor, npc_car_wp.transform)
+            continue_drive = WaypointFollower(actor)
+            father_tree.add_child(change_lateral)
+            father_tree.add_child(continue_drive)
+            print("set the later distance")
+            return
+        elif isinstance(modifier, YawModifier):
+            yaw = modifier.get_angle()
+            npc_name = modifier.get_actor_name()
+            npc_config = config.get_car_config(npc_name)
+            npc_rotation = npc_config.get_tansform().rotation
+            npc_rotation.yaw = yaw
+
+            return
+        elif isinstance(modifier, OrientationModifier):
+            yaw = modifier.get_yaw()
+            roll = modifier.get_roll()
+            pitch = modifier.get_pitch()
+            npc_name = modifier.get_actor_name()
+            npc_config = config.get_car_config(npc_name)
+            npc_rotation = npc_config.get_tansform().rotation
+            npc_rotation.yaw = yaw
+            npc_rotation.roll = roll
+            npc_rotation.pitch = pitch
+
+            return
+        elif isinstance(modifier, PhysicalMovementModifier):
+            actor_status = modifier.get_option()
+            npc_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            car_conf = config.get_car_config(npc_name)
+            car_trans = car_conf.get_transform()
+            change_physics = ActorTransformSetter(actor, car_trans, physics= actor_status)
+            father_tree.add_child(change_physics)
+            print(f"set physics {actor_status}")
+            return
+
     # start
     # Deal with absolute positioning vehicles first，such as lane(1, at: start)
     event_start = [
@@ -939,8 +990,8 @@ class OSC2Scenario(BasicScenario):
                             for arg in arguments:
                                 if isinstance(arg, Tuple):
                                     keyword_args[arg[0]] = arg[1]
-                                else:
-                                    keyword_args["distance"] = str(arg)
+                                elif isinstance(arg, Physical):
+                                    keyword_args["distance"] = arg
                         elif isinstance(arguments, tuple):
                             keyword_args[arguments[0]] = arguments[1]
                         elif isinstance(arguments, Physical):
@@ -965,8 +1016,7 @@ class OSC2Scenario(BasicScenario):
                             )
 
                         modifier_ins.set_args(keyword_args)
-                        #不确定是speed还是location
-                        speed_modifiers.append(modifier_ins)###待定
+                        location_modifiers.append(modifier_ins)###待定
 
                     elif modifier_name == 'orientation':
                         modifier_ins = OrientationModifier(actor, modifier_name)
@@ -983,8 +1033,7 @@ class OSC2Scenario(BasicScenario):
                                 f"no implement argument of {modifier_name}"
                             )
                         modifier_ins.set_args(keyword_args)
-                        #同样不确定
-                        speed_modifiers.append(modifier_ins)
+                        location_modifiers.append(modifier_ins)
 
                     elif modifier_name == 'along':
                         modifier_ins = AlongModifier(actor, modifier_name)
@@ -1042,16 +1091,17 @@ class OSC2Scenario(BasicScenario):
                     elif modifier_name == 'physical_movement':
                         modifier_ins = PhysicalMovementModifier(actor, modifier_name)
                         keyword_args = {}
-                        physical_option = ["prefer_physical", "prefer_non_physical", "must_be_physical"]
                         arguments = str(arguments)
-                        if arguments in physical_option:
-                            keyword_args["options"] = arguments
+                        if arguments == "must_be_physical" or "prefer_physical":
+                            keyword_args["option"] = True
+                        elif arguments == "prefer_non_physical":
+                            keyword_args["option"] = False
                         else:
                             raise NotImplementedError(
                                 f"no implement argument of {modifier_name}"
                             )
                         modifier_ins.set_args(keyword_args)
-                        # 修改物体状态？这是什么类型？
+                        location_modifiers.append(modifier_ins)
 
                     elif modifier_name == 'avoid_collisions':
                         modifier_ins = AvoidCollisionsModifier(actor, modifier_name)
