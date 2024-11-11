@@ -312,7 +312,10 @@ class DistanceModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_distance(self):
-        if (
+        distance = self.args["distance"]
+        if isinstance(distance, Physical):
+            return distance.gen_single_value()
+        elif (
                 self.args["distance"][0] != "["
                 and self.args["distance"][-1] != "]"
         ):

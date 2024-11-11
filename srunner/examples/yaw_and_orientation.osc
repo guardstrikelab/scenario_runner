@@ -13,13 +13,15 @@ scenario top:
         get_ahead: parallel(duration: 5s):
             ego_vehicle.drive(path) with:
                 speed(30kph)
-                lane(1, at: start) # left to right: [1..n]
+                lane(1, at: start)
             npc.drive(path) with:
-                speed(30kph)
                 lane(right_of: ego_vehicle, at: start)
-                position(10m, ahead_of: ego_vehicle, at: start)
+                # yaw(angle: 10)
+                orientation(yaw: 10, pitch: 10, roll: 10)
+                position(30m, ahead_of: ego_vehicle, at: start)
+                speed(30kph)
 
-        keep_speed: parallel(duration: 10s):
+        slow: parallel(duration: 10s):
             ego_vehicle.drive(path)
             npc.drive(path) with:
-                keep_speed()
+                speed(25kph)

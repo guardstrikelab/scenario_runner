@@ -6,6 +6,7 @@ import operator
 import random
 import re
 import sys
+from asynchat import find_prefix_at_end
 from typing import List, Tuple
 
 import py_trees
@@ -56,6 +57,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
 )
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.tests.carla_mocks.carla import Actor
 from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
@@ -197,6 +199,14 @@ def process_speed_modifier(
 
             father_tree.add_child(uniform_accelerate_speed)
             father_tree.add_child(car_driving)
+        elif isinstance(modifier, DistanceModifier):
+            drive_distance = modifier.get_distance()
+            target_speed = drive_distance / duration
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            car_driving = WaypointFollower(actor, target_speed)
+            print("set the distance to reach")
+
+            father_tree.add_child(car_driving)
         elif isinstance(modifier, AvoidCollisionsModifier):
             ac = modifier.get_bool()
             actor = CarlaDataProvider.get_actor_by_name(actor_name)
@@ -251,31 +261,38 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             npc_name = modifier.get_actor_name()
             actor = CarlaDataProvider.get_actor_by_name(npc_name)
             change_lateral = ActorTransformSetter(actor, npc_car_wp.transform)
-            continue_drive = WaypointFollower(actor)
             father_tree.add_child(change_lateral)
-            father_tree.add_child(continue_drive)
             print("set the later distance")
-            return
+            modifiers.remove(modifier)
+
         elif isinstance(modifier, YawModifier):
             yaw = modifier.get_angle()
             npc_name = modifier.get_actor_name()
             npc_config = config.get_car_config(npc_name)
-            npc_rotation = npc_config.get_tansform().rotation
-            npc_rotation.yaw = yaw
+            npc_trans = npc_config.get_transform()
+            npc_trans.rotation.yaw = yaw
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_raw = ActorTransformSetter(actor, npc_trans)
+            father_tree.add_child(change_raw)
+            print("set the yaw")
+            modifiers.remove(modifier)
 
-            return
         elif isinstance(modifier, OrientationModifier):
             yaw = modifier.get_yaw()
             roll = modifier.get_roll()
             pitch = modifier.get_pitch()
             npc_name = modifier.get_actor_name()
             npc_config = config.get_car_config(npc_name)
-            npc_rotation = npc_config.get_tansform().rotation
-            npc_rotation.yaw = yaw
-            npc_rotation.roll = roll
-            npc_rotation.pitch = pitch
+            npc_trans = npc_config.get_transform()
+            npc_trans.rotation.yaw = yaw
+            npc_trans.rotation.pitch = pitch
+            npc_trans.rotation.roll = roll
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_orientation = ActorTransformSetter(actor, npc_trans)
+            father_tree.add_child(change_orientation)
+            print("set the rotation")
+            modifiers.remove(modifier)
 
-            return
         elif isinstance(modifier, PhysicalMovementModifier):
             actor_status = modifier.get_option()
             npc_name = modifier.get_actor_name()
@@ -285,7 +302,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             change_physics = ActorTransformSetter(actor, car_trans, physics= actor_status)
             father_tree.add_child(change_physics)
             print(f"set physics {actor_status}")
-            return
+            modifiers.remove(modifier)
 
     # start
     # Deal with absolute positioning vehicles first，such as lane(1, at: start)
@@ -1008,15 +1025,15 @@ class OSC2Scenario(BasicScenario):
                         # [, <standard-movement-parameters>])
                         modifier_ins = YawModifier(actor, modifier_name)
                         keyword_args = {}
-                        if isinstance(arguments, Physical):
-                            keyword_args["angle"] = arguments
+                        if isinstance(arguments, tuple):
+                            keyword_args["angle"] = str(arguments[1])
                         else:
                             raise NotImplementedError(
                                 f"no implement argument of {modifier_name}"
                             )
 
                         modifier_ins.set_args(keyword_args)
-                        location_modifiers.append(modifier_ins)###待定
+                        location_modifiers.append(modifier_ins)
 
                     elif modifier_name == 'orientation':
                         modifier_ins = OrientationModifier(actor, modifier_name)
@@ -1025,7 +1042,7 @@ class OSC2Scenario(BasicScenario):
                             arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, tuple):
-                                    keyword_args[arg[0]] = arg[1]
+                                    keyword_args[arg[0]] = str(arg[1])
                         elif isinstance(arguments, tuple):
                             keyword_args[arguments[0]] = arguments[1]
                         else:
