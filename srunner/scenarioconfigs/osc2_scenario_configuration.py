@@ -20,6 +20,7 @@ from srunner.osc2_dm.physical_types import Physical, Range
 
 # 标准库
 from srunner.osc2_stdlib.path import Path
+import srunner.osc2_stdlib.environment as Environment
 
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration
@@ -244,6 +245,31 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                     else:
                         position_args.append(arguments)
                 path_function(*position_args, **keyword_args)
+            if hasattr(Environment, function_name):
+                env_function = getattr(Environment, function_name)
+                keyword_args = {}
+                position_args = []
+                if isinstance(arguments, List):
+                    arguments = flat_list(arguments)
+                    for arg in arguments:
+                        if isinstance(arg, Tuple):
+                            if self.father_ins.variables.get(arg[0]) is not None:
+                                keyword_args[arg[0]] = self.father_ins.variables.get(
+                                    arg[0]
+                                )
+                            else:
+                                keyword_args[arg[0]] = arg[1]
+                        else:
+                            if self.father_ins.variables.get(arg) is not None:
+                                position_args.append(self.father_ins.variables.get(arg))
+                            else:
+                                position_args.append(arg)
+                else:
+                    if self.father_ins.variables.get(arguments) is not None:
+                        position_args.append(self.father_ins.variables.get(arguments))
+                    else:
+                        position_args.append(arguments)
+                env_function(self.father_ins.weather, *position_args, **keyword_args)
             if actor_name == "ego_vehicle":
                 if hasattr(vehicles.Vehicle, function_name):
                     position_args = []

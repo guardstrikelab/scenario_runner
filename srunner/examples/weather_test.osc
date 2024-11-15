@@ -1,0 +1,38 @@
+import basic.osc
+
+actor Environment
+modifier Environment.clouds
+modifier Environment.air
+modifier Environment.rain
+modifier Environment.wind
+modifier Environment.fog
+modifier Environment.assign_celestial_position
+
+scenario top:
+    path: Path                      # A path in the map
+    path.set_map("Town04")    # specify map to use in this test
+    path.path_min_driving_lanes(3)         # Path should have at least two lanes
+
+    environment : Environment
+    #environment.clouds(70)
+    #environment.air(80)
+    #environment.rain(100)
+    #environment.wind(80)
+    #environment.fog(50)
+    environment.assign_celestial_position(moon, 45, 90)
+
+    ego_vehicle: Model3                # ego car
+    npc: Rubicon               # The other car
+
+    event start
+    event end
+    do serial:
+        get_ahead: parallel(duration: 10s):
+            ego_vehicle.drive(path) with:
+                speed(20kph)
+                lane(1, at: start) # left to right: [1..n]
+            npc.drive(path) with:
+                lane(right_of: ego_vehicle, at: start)
+                position(15m, behind: ego_vehicle, at: start)
+                position(20m, ahead_of: ego_vehicle, at: end)
+

@@ -1,65 +1,33 @@
 from srunner.osc2_dm.physical_types import Physical
 
-class Environment:
-    def __init__(self) -> None:
-        self.args = {}
 
-    def set_args(self, kw_args) -> None:
-        self.args = kw_args
+def air(weather, wetness):
+    weather.wetness = wetness
 
 
-class Air(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_wetness(self) -> float:
-        return self.args["wetness"]
+def rain(weather, precipitation):
+    weather.precipitation = precipitation
 
 
-class Rain(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_precipitation(self) -> float:
-        return self.args["precipitation"]
+def wind(weather, intensity):
+    weather.wind_intensity = intensity
 
 
-class Wind(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_intensity(self) -> float:
-        return self.args["intensity"]
+def fog(weather, visual_distance):
+    weather.fog_falloff = 6
+    weather.fog_density = 50
+    weather.fog_distance = visual_distance
 
 
-class Fog(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_visual(self):
-        return self.args["visual"]
+def clouds(weather, cloudiness):
+    weather.cloudiness = cloudiness
 
 
-class Clouds(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_cloudiness(self) -> float:
-        return self.args["cloudiness"]
-
-
-class Celestial(Environment):
-    def __init__(self) -> None:
-        super().__init__()
-        self.args = {}
-
-    def get_body(self):
-        return self.args["body"]
-
-    def get_angle(self):
-        return self.args["angle"]
+def assign_celestial_position(weather, body, azimuth, elevation):
+    # Carla里面好像没有月亮，直接太阳倒转表示月亮
+    if body == "sun":
+        weather.sun_azimuth_angle = azimuth
+        weather.sun_altitude_angle = elevation
+    elif body == "moon":
+        weather.sun_altitude_angle = azimuth
+        weather.sun_altitude_angle = -1 * elevation
