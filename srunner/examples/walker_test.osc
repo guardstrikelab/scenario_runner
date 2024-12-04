@@ -1,0 +1,21 @@
+import basic.osc
+
+scenario top:
+    path: Path
+    path.set_map("Town04")
+    path.path_min_driving_lanes(2)
+
+    ego_vehicle: Model3
+    person: Walker02
+    ego_vehicle.set_position(x:255.0m, y:-204.7m, z:0.0m, pitch:0.0rad, yaw:88.4rad, roll:0.0rad)
+    person.set_position(x:255.0m, y:-200.7m, z:0.0m, pitch:0.0rad, yaw:88.4rad, roll:0.0rad)
+
+    event start
+    event end
+    do serial:
+        get_ahead: parallel(duration: 8s):
+            ego_vehicle.drive(path) with:
+                speed(3kph)
+            person.walk(path) with:
+                speed(10kph)
+

@@ -20,6 +20,7 @@ from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
 from srunner.osc2.utils.log_manager import (LOG_INFO, LOG_ERROR, LOG_WARNING)
 from srunner.osc2.utils.relational_operator import RelationalOperator
 from srunner.osc2_dm.physical_types import Physical, Range
+from srunner.osc2_stdlib.path import Path
 
 # from sqlalchemy import true
 # from srunner.osc2_stdlib import event, variables
@@ -30,6 +31,8 @@ from srunner.osc2_stdlib.modifier import (
     LaneModifier,
     PositionModifier,
     SpeedModifier,
+    LateralModifier, YawModifier, OrientationModifier, AlongModifier, AlongTrajectoryModifier, DistanceModifier,
+    PhysicalMovementModifier, AvoidCollisionsModifier,
 )
 
 # OSC2
@@ -43,7 +46,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     LaneChange,
     UniformAcceleration,
     WaypointFollower,
-    calculate_distance,
+    calculate_distance, ChangeActorLateralMotion, ChangeActorLaneOffset,
 )
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
@@ -52,6 +55,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
 )
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.tests.carla_mocks.carla import Actor
 from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
@@ -193,6 +197,20 @@ def process_speed_modifier(
 
             father_tree.add_child(uniform_accelerate_speed)
             father_tree.add_child(car_driving)
+        elif isinstance(modifier, DistanceModifier):
+            drive_distance = modifier.get_distance()
+            target_speed = drive_distance / duration
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            car_driving = WaypointFollower(actor, target_speed)
+            print("set the distance to reach")
+
+            father_tree.add_child(car_driving)
+        elif isinstance(modifier, AvoidCollisionsModifier):
+            ac = modifier.get_bool()
+            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            car_driving = WaypointFollower(actor, avoid_collision=ac)
+            father_tree.add_child(car_driving)
+            print(f"change status of avoid_collisions to {ac}")
         else:
             LOG_WARNING("not implement modifier")
 
@@ -226,6 +244,64 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             father_tree.add_child(continue_drive)
             print("END of change lane--")
             return
+        elif isinstance(modifier, LateralModifier):
+            later_distance = modifier.get_distance()
+            relative_car_name, location = modifier.get_refer_car()
+            relative_car_conf = config.get_car_config(relative_car_name)
+            relative_car_location = relative_car_conf.get_transform().location
+            if location == "left_of":
+                npc_car_lateral_dis = later_distance.num
+            elif location == "right_of":
+                npc_car_lateral_dis = -1 * later_distance.num
+            npc_car_location = relative_car_location
+            npc_car_location.x = npc_car_location.x + npc_car_lateral_dis
+            npc_car_wp = CarlaDataProvider.get_map().get_waypoint(npc_car_location)
+            npc_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_lateral = ActorTransformSetter(actor, npc_car_wp.transform)
+            father_tree.add_child(change_lateral)
+            print("set the later distance")
+            modifiers.remove(modifier)
+
+        elif isinstance(modifier, YawModifier):
+            yaw = modifier.get_angle().gen_physical_value()
+            npc_name = modifier.get_actor_name()
+            npc_config = config.get_car_config(npc_name)
+            npc_trans = npc_config.get_transform()
+            npc_trans.rotation.yaw = yaw
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_raw = ActorTransformSetter(actor, npc_trans)
+            father_tree.add_child(change_raw)
+            print("set the yaw")
+            modifiers.remove(modifier)
+
+        elif isinstance(modifier, OrientationModifier):
+            yaw = modifier.get_yaw()
+            roll = modifier.get_roll()
+            pitch = modifier.get_pitch()
+            npc_name = modifier.get_actor_name()
+            npc_config = config.get_car_config(npc_name)
+            npc_trans = npc_config.get_transform()
+            npc_trans.rotation.yaw = yaw
+            npc_trans.rotation.pitch = pitch
+            npc_trans.rotation.roll = roll
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            change_orientation = ActorTransformSetter(actor, npc_trans)
+            father_tree.add_child(change_orientation)
+            print("set the rotation")
+            modifiers.remove(modifier)
+
+        elif isinstance(modifier, PhysicalMovementModifier):
+            actor_status = modifier.get_option()
+            npc_name = modifier.get_actor_name()
+            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            car_conf = config.get_car_config(npc_name)
+            car_trans = car_conf.get_transform()
+            change_physics = ActorTransformSetter(actor, car_trans, physics= actor_status)
+            father_tree.add_child(change_physics)
+            print(f"set physics {actor_status}")
+            modifiers.remove(modifier)
+
     # start
     # Deal with absolute positioning vehicles first，such as lane(1, at: start)
     event_start = [
@@ -697,6 +773,13 @@ class OSC2Scenario(BasicScenario):
 
             behavior_invocation_name = None
             if actor != None:
+                if actor == "ego_vehicle" and behavior_name != "drive"\
+                        or actor == "npc" and behavior_name != "drive":
+                    print("[Error] vehicle should use 'drive'")
+                    sys.exit(1)
+                elif actor == "person" and behavior_name != "walk":
+                    print("[Error] walker should use 'walk'")
+                    sys.exit(1)
                 behavior_invocation_name = actor + "." + behavior_name
             else:
                 behavior_invocation_name = behavior_name
@@ -789,7 +872,7 @@ class OSC2Scenario(BasicScenario):
                             keyword_args["speed"] = arguments
                         else:
                             raise NotImplementedError(
-                                f"no implentment argument of {modifier_name}"
+                                f"no implement argument of {modifier_name}"
                             )
 
                         modifier_ins.set_args(keyword_args)
@@ -798,7 +881,6 @@ class OSC2Scenario(BasicScenario):
 
                     elif modifier_name == "position":
                         modifier_ins = PositionModifier(actor, modifier_name)
-                        keyword_args = {}
 
                         keyword_args = {}
                         if isinstance(arguments, list):
@@ -810,11 +892,11 @@ class OSC2Scenario(BasicScenario):
                                     keyword_args["distance"] = arg
                         elif isinstance(arguments, tuple):
                             keyword_args[arguments[0]] = arguments[1]
-                        elif isinstance(arg, Physical):
+                        elif isinstance(arguments, Physical): # 原本是arg，改为arguments
                             keyword_args["distance"] = arguments
                         else:
                             raise NotImplementedError(
-                                f"no implentment argument of {modifier_name}"
+                                f"no implement argument of {modifier_name}"
                             )
 
                         modifier_ins.set_args(keyword_args)
@@ -907,6 +989,159 @@ class OSC2Scenario(BasicScenario):
                         modifier_ins.set_args(keyword_args)
 
                         location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'keep_position':
+                        actor_object = CarlaDataProvider.get_actor_by_name(actor)
+                        car_driving = ChangeTargetSpeed(actor_object, 0)
+                        actor_drive.add_child(car_driving)
+                        behavior.add_child(actor_drive)
+                        print("Target keep position")
+
+                    elif modifier_name == 'keep_speed':
+                        actor_object = CarlaDataProvider.get_actor_by_name(actor)
+                        car_driving = WaypointFollower(actor_object)
+                        actor_drive.add_child(car_driving)
+                        behavior.add_child(actor_drive)
+                        print("Target keep speed")
+
+                    elif modifier_name == 'lateral':
+                        modifier_ins = LateralModifier(actor, modifier_name)
+                        keyword_args = {}
+                        if isinstance(arguments, list):
+                            arguments = OSC2Helper.flat_list(arguments)
+                            for arg in arguments:
+                                if isinstance(arg, Tuple):
+                                    keyword_args[arg[0]] = arg[1]
+                                elif isinstance(arg, Physical):
+                                    keyword_args["distance"] = arg
+                        elif isinstance(arguments, tuple):
+                            keyword_args[arguments[0]] = arguments[1]
+                        elif isinstance(arguments, Physical):
+                            keyword_args["distance"] = arguments
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'yaw':
+                        # yaw(angle: angle
+                        # [, <standard-movement-parameters>])
+                        modifier_ins = YawModifier(actor, modifier_name)
+                        keyword_args = {}
+                        if isinstance(arguments, Physical):
+                            keyword_args["angle"] = arguments
+                        elif isinstance(arguments, tuple):
+                            keyword_args[arguments[0]] = arguments[1]
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+
+                        modifier_ins.set_args(keyword_args)
+                        location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'orientation':
+                        modifier_ins = OrientationModifier(actor, modifier_name)
+                        keyword_args = {}
+                        if isinstance(arguments, list):
+                            arguments = OSC2Helper.flat_list(arguments)
+                            for arg in arguments:
+                                if isinstance(arg, tuple):
+                                    keyword_args[arg[0]] = arg[1]
+                        elif isinstance(arguments, tuple):
+                            keyword_args[arguments[0]] = arguments[1]
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'along':
+                        pass
+                        # modifier_ins = AlongModifier(actor, modifier_name)
+                        # keyword_args = {}
+                        # if isinstance(arguments, list):
+                        #     arguments = OSC2Helper.flat_list(arguments)
+                        #     for arg in arguments:
+                        #         if isinstance(arg, tuple):
+                        #             keyword_args[arg[0]] = arg[1]
+                        #         else:
+                        #             keyword_args["route"] = str(arg)
+                        # elif isinstance(arguments, Path):#存在疑问，route是否与Path同含义
+                        #     keyword_args["route"] = arguments
+                        # else:
+                        #     raise NotImplementedError(
+                        #         f"no implement argument of {modifier_name}"
+                        #     )
+                        # modifier_ins.set_args(keyword_args)
+                        # speed_modifiers.append(modifier_ins)
+
+                    # 不知道和alone的区别在哪，一个是现有道路，另一个是预定轨迹？
+                    elif modifier_name == 'along_trajectory':
+                        pass
+                        # modifier_ins = AlongTrajectoryModifier(actor, modifier_name)
+                        # keyword_args = {}
+                        # if isinstance(arguments, list):
+                        #     arguments = OSC2Helper.flat_list(arguments)
+                        #     for arg in arguments:
+                        #         if isinstance(arg, tuple):
+                        #             keyword_args[arg[0]] = arg[1]
+                        #         else:
+                        #             keyword_args["trajectory"] = str(arg)
+                        # elif isinstance(arguments, Path):  # 存在疑问，route是否与Path同含义
+                        #     keyword_args["trajectory"] = arguments
+                        # else:
+                        #     raise NotImplementedError(
+                        #         f"no implement argument of {modifier_name}"
+                        #     )
+                        # modifier_ins.set_args(keyword_args)
+                        # speed_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'distance':
+                        modifier_ins = DistanceModifier(actor, modifier_name)
+                        keyword_args = {}
+                        if isinstance(arguments, Physical):
+                            keyword_args["distance"] = arguments
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        speed_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'physical_movement':
+                        modifier_ins = PhysicalMovementModifier(actor, modifier_name)
+                        keyword_args = {}
+                        arguments = str(arguments)
+                        if arguments == "must_be_physical" or "prefer_physical":
+                            keyword_args["option"] = True
+                        elif arguments == "prefer_non_physical":
+                            keyword_args["option"] = False
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        location_modifiers.append(modifier_ins)
+
+                    elif modifier_name == 'avoid_collisions':
+                        modifier_ins = AvoidCollisionsModifier(actor, modifier_name)
+                        keyword_args = {}
+                        arguments = str(arguments)
+                        if arguments == "False":
+                            keyword_args["bool"] = False
+                        elif arguments == "True":
+                            keyword_args["bool"] = True
+                        else:
+                            raise NotImplementedError(
+                                f"no implement argument of {modifier_name}"
+                            )
+                        modifier_ins.set_args(keyword_args)
+                        speed_modifiers.append(modifier_ins)
+
                     else:
                         raise NotImplementedError(
                             f"no implentment function: {modifier_name}"
@@ -949,13 +1184,9 @@ class OSC2Scenario(BasicScenario):
                 and modifier_name not in dir(self.father_ins.config.path)
                 and modifier_name
                 not in (
-                    "speed",
-                    "lane",
-                    "position",
-                    "acceleration",
-                    "keep_lane",
-                    "change_speed",
-                    "change_lane",
+                    'speed', 'lane', 'position', 'acceleration', 'keep_lane', 'change_speed', 'change_lane',
+                    'keep_position', 'keep_speed', 'lateral', 'yaw', 'orientation', 'along', 'along_trajectory',
+                    'distance', 'physical_movement', 'avoid_collisions'
                 )
             ):
                 line, column = node.get_loc()
