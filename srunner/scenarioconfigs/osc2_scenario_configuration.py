@@ -5,11 +5,9 @@ generate relevant type objects in the standard library, and set parameters
 
 """
 import sys
-from operator import attrgetter
 from typing import List, Tuple
 
 import carla
-from networkx.algorithms.bipartite.basic import color
 
 import srunner.osc2_stdlib.misc_object as misc
 import srunner.osc2_stdlib.variables as variable

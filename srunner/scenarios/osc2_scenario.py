@@ -6,13 +6,10 @@ import operator
 import random
 import re
 import sys
-from asynchat import find_prefix_at_end
-from sys import builtin_module_names
 from typing import List, Tuple
 
 import py_trees
 from agents.navigation.global_route_planner import GlobalRoutePlanner
-from numpy.f2py.rules import arg_rules
 
 from srunner.osc2.ast_manager import ast_node
 from srunner.osc2.ast_manager.ast_vistor import ASTVisitor
