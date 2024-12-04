@@ -1,5 +1,3 @@
-import math
-
 import carla
 
 import srunner.osc2_stdlib.misc_object as misc
@@ -36,6 +34,9 @@ class Vehicle:
 
     def set_model(self, model: str) -> None:
         self.model = model
+
+    def set_color(self, color: str):
+        self.color = color
 
     def set_position(self, pos: misc.Position) -> None:
         self.position = pos

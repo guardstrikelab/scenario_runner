@@ -5,9 +5,11 @@ generate relevant type objects in the standard library, and set parameters
 
 """
 import sys
+from operator import attrgetter
 from typing import List, Tuple
 
 import carla
+from networkx.algorithms.bipartite.basic import color
 
 import srunner.osc2_stdlib.misc_object as misc
 import srunner.osc2_stdlib.variables as variable
@@ -272,29 +274,66 @@ class OSC2ScenarioConfiguration(ScenarioConfiguration):
                 env_function(self.father_ins.weather, *position_args, **keyword_args)
             if actor_name == "ego_vehicle":
                 if hasattr(vehicles.Vehicle, function_name):
-                    position_args = []
-                    keyword_args = {}
-                    position_function = getattr(
-                        self.father_ins.ego_vehicles[0], function_name
-                    )
+                    if function_name == "set_position":
+                        position_args = []
+                        keyword_args = {}
+                        position_function = getattr(
+                            self.father_ins.ego_vehicles[0], function_name
+                        )
+                        pos = misc.WorldPosition(0, 0, 0, 0, 0, 0)
+                        position_cls = getattr(pos, "__init__")
+                        if isinstance(arguments, List):
+                            arguments = flat_list(arguments)
+                            for arg in arguments:
+                                if isinstance(arg, Tuple):
+                                    if isinstance(arg[1], Physical):
+                                        keyword_args[arg[0]] = arg[1].gen_physical_value()
+                                else:
+                                    if isinstance(arg, Physical):
+                                        position_args.append(arg.gen_physical_value())
+                        else:
+                            if isinstance(arguments, Physical):
+                                position_args.append(arguments.gen_physical_value())
+                        position_cls(*position_args, **keyword_args)
+                        position_function(pos)
+                        self.father_ins.ego_vehicles[0].random_location = False
+                    elif function_name == "set_color":
+                        keyword_args = {}
+                        color = None
+                        if isinstance(arguments, str):
+                            color = arguments
+                        else:
+                            print(
+                                "[Error] 'color' parameter must be 'str' type"
+                            )
+                        color_function = getattr(self.father_ins.ego_vehicles[0], function_name)
+                        color_function(color)
 
-                    pos = misc.WorldPosition(0, 0, 0, 0, 0, 0)
-                    position_cls = getattr(pos, "__init__")
-                    if isinstance(arguments, List):
-                        arguments = flat_list(arguments)
-                        for arg in arguments:
-                            if isinstance(arg, Tuple):
-                                if isinstance(arg[1], Physical):
-                                    keyword_args[arg[0]] = arg[1].gen_physical_value()
-                            else:
-                                if isinstance(arg, Physical):
-                                    position_args.append(arg.gen_physical_value())
-                    else:
-                        if isinstance(arguments, Physical):
-                            position_args.append(arguments.gen_physical_value())
-                    position_cls(*position_args, **keyword_args)
-                    position_function(pos)
-                    self.father_ins.ego_vehicles[0].random_location = False
+            if actor_name == "person":
+                if hasattr(pedestrians.Pedestrian, function_name):
+                    if function_name == "set_position":
+                        position_args = []
+                        keyword_args = {}
+                        position_function = getattr(
+                            self.father_ins.walkers[0], function_name
+                        )
+                        pos = misc.WorldPosition(0, 0, 0, 0, 0, 0)
+                        position_cls = getattr(pos, "__init__")
+                        if isinstance(arguments, List):
+                            arguments = flat_list(arguments)
+                            for arg in arguments:
+                                if isinstance(arg, Tuple):
+                                    if isinstance(arg[1], Physical):
+                                        keyword_args[arg[0]] = arg[1].gen_physical_value()
+                                else:
+                                    if isinstance(arg, Physical):
+                                        position_args.append(arg.gen_physical_value())
+                        else:
+                            if isinstance(arguments, Physical):
+                                position_args.append(arguments.gen_physical_value())
+                        position_cls(*position_args, **keyword_args)
+                        position_function(pos)
+                        self.father_ins.walkers[0].random_location = False
 
         def visit_event_declaration(self, node: ast_node.EventDeclaration):
             event_name = node.field_name

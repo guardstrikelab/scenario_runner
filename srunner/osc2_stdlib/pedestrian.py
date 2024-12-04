@@ -8,7 +8,7 @@ class Pedestrian:
     def __init__(self) -> None:
         self.model = 'walker.pedestrians.*'
         self.rolename = 'hero'
-        self.gender = None
+        self.gender = "woman"
         self.age = None
         self.speed = 0
         self.color = None
@@ -46,6 +46,31 @@ class Pedestrian:
 
     def get_arg(self, key):
         return self.args[key]
+
+    def set_position(self, pos: misc.Position) -> None:
+        self.position = pos
+        # convert position to transform，reference convert_position_to_transform function
+        if type(pos) is misc.WorldPosition:
+            x = float(pos.x)
+            y = float(pos.y)
+            z = float(pos.z)
+            # yaw = math.degrees(float(pos.h))
+            # pitch = math.degrees(float(pos.p))
+            # roll = math.degrees(float(pos.r))
+            yaw = float(pos.yaw)
+            pitch = float(pos.pitch)
+            roll = float(pos.roll)
+            # if not OpenScenarioParser.use_carla_coordinate_system:
+            #     y = y * (-1.0)
+            #     yaw = yaw * (-1.0)
+            self.transform = carla.Transform(
+                carla.Location(x=x, y=y, z=z),
+                carla.Rotation(yaw=yaw, pitch=pitch, roll=roll),
+            )
+        elif type(pos) is misc.LanePosition:
+            pass
+        else:
+            print("no implement position type")
 
 
 class Walker(Pedestrian):

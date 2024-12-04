@@ -192,16 +192,13 @@ class YawModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_angle(self):
-        if(
-                self.args["angle"][0] != "[" and self.args["angle"][-1] != "]"
-        ):
-            return int(float(self.args["angle"]))
+        angle = self.args["angle"]
+        if isinstance(angle, Physical):
+            return angle
         else:
-            values = self.args["lane_changes"][1:-1].split("..")
-            start = int(float(values[0]))
-            end = int(float(values[1]))
-            value = random.randint(start, end)
-            return value
+            print(
+                "[Error] 'angle' parameter of YawModifier must be 'Physical' type"
+            )
 
 
 class OrientationModifier(Modifier):
@@ -209,46 +206,37 @@ class OrientationModifier(Modifier):
         super().__init__(actor_name, name)
 
     def get_yaw(self):
-        if self.args["yaw"] is None:
+        yaw = self.args["yaw"]
+        if yaw is None:
             return 0
-        elif (
-                self.args["yaw"][0] != "[" and self.args["yaw"][-1] != "]"
-        ):
-            return int(float(self.args["yaw"]))
+        elif isinstance(yaw, Physical):
+            return yaw.gen_physical_value()
         else:
-            values = self.args["yaw"][1:-1].split("..")
-            start = int(float(values[0]))
-            end = int(float(values[1]))
-            value = random.randint(start, end)
-            return value
+            print(
+                "[Error] 'yaw' parameter of OrientationModifier must be 'Physical' type"
+            )
 
     def get_pitch(self):
-        if self.args["pitch"] is None:
+        pitch = self.args["pitch"]
+        if pitch is None:
             return 0
-        elif (
-                self.args["pitch"][0] != "[" and self.args["pitch"][-1] != "]"
-        ):
-            return int(float(self.args["pitch"]))
+        elif isinstance(pitch, Physical):
+            return pitch.gen_physical_value()
         else:
-            values = self.args["pitch"][1:-1].split("..")
-            start = int(float(values[0]))
-            end = int(float(values[1]))
-            value = random.randint(start, end)
-            return value
+            print(
+                "[Error] 'yaw' parameter of OrientationModifier must be 'Physical' type"
+            )
 
     def get_roll(self):
-        if self.args["roll"] is None:
+        roll = self.args["roll"]
+        if roll is None:
             return 0
-        elif (
-                self.args["roll"][0] != "[" and self.args["roll"][-1] != "]"
-        ):
-            return int(float(self.args["roll"]))
+        elif isinstance(roll, Physical):
+            return roll.gen_physical_value()
         else:
-            values = self.args["roll"][1:-1].split("..")
-            start = int(float(values[0]))
-            end = int(float(values[1]))
-            value = random.randint(start, end)
-            return value
+            print(
+                "[Error] 'yaw' parameter of OrientationModifier must be 'Physical' type"
+            )
 
 
 class AlongModifier(Modifier):

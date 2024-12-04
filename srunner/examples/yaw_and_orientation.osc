@@ -1,5 +1,12 @@
 import basic.osc
 
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 0.01745329252)
+unit deg    of angle is SI(rad: 1, factor: 0.01745329252)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+
+
 scenario top:
     path: Path                      # A path in the map
     path.set_map("Town04")    # specify map to use in this test
@@ -16,9 +23,9 @@ scenario top:
                 lane(1, at: start)
             npc.drive(path) with:
                 lane(right_of: ego_vehicle, at: start)
-                # yaw(angle: 10)
-                orientation(yaw: 10, pitch: 10, roll: 10)
-                position(30m, ahead_of: ego_vehicle, at: start)
+                yaw(angle: 10deg)
+                #orientation(yaw: 10deg, pitch: 10deg, roll: 10deg)
+                position(20m, ahead_of: ego_vehicle, at: start)
                 speed(30kph)
 
         slow: parallel(duration: 10s):

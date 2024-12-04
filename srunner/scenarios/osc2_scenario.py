@@ -7,6 +7,7 @@ import random
 import re
 import sys
 from asynchat import find_prefix_at_end
+from sys import builtin_module_names
 from typing import List, Tuple
 
 import py_trees
@@ -266,7 +267,7 @@ def process_location_modifier(config, modifiers, duration: float, father_tree):
             modifiers.remove(modifier)
 
         elif isinstance(modifier, YawModifier):
-            yaw = modifier.get_angle()
+            yaw = modifier.get_angle().gen_physical_value()
             npc_name = modifier.get_actor_name()
             npc_config = config.get_car_config(npc_name)
             npc_trans = npc_config.get_transform()
@@ -775,6 +776,13 @@ class OSC2Scenario(BasicScenario):
 
             behavior_invocation_name = None
             if actor != None:
+                if actor == "ego_vehicle" and behavior_name != "drive"\
+                        or actor == "npc" and behavior_name != "drive":
+                    print("[Error] vehicle should use 'drive'")
+                    sys.exit(1)
+                elif actor == "person" and behavior_name != "walk":
+                    print("[Error] walker should use 'walk'")
+                    sys.exit(1)
                 behavior_invocation_name = actor + "." + behavior_name
             else:
                 behavior_invocation_name = behavior_name
@@ -987,7 +995,7 @@ class OSC2Scenario(BasicScenario):
 
                     elif modifier_name == 'keep_position':
                         actor_object = CarlaDataProvider.get_actor_by_name(actor)
-                        car_driving = WaypointFollower(actor_object)
+                        car_driving = ChangeTargetSpeed(actor_object, 0)
                         actor_drive.add_child(car_driving)
                         behavior.add_child(actor_drive)
                         print("Target keep position")
@@ -1025,8 +1033,10 @@ class OSC2Scenario(BasicScenario):
                         # [, <standard-movement-parameters>])
                         modifier_ins = YawModifier(actor, modifier_name)
                         keyword_args = {}
-                        if isinstance(arguments, tuple):
-                            keyword_args["angle"] = str(arguments[1])
+                        if isinstance(arguments, Physical):
+                            keyword_args["angle"] = arguments
+                        elif isinstance(arguments, tuple):
+                            keyword_args[arguments[0]] = arguments[1]
                         else:
                             raise NotImplementedError(
                                 f"no implement argument of {modifier_name}"
@@ -1042,7 +1052,7 @@ class OSC2Scenario(BasicScenario):
                             arguments = OSC2Helper.flat_list(arguments)
                             for arg in arguments:
                                 if isinstance(arg, tuple):
-                                    keyword_args[arg[0]] = str(arg[1])
+                                    keyword_args[arg[0]] = arg[1]
                         elif isinstance(arguments, tuple):
                             keyword_args[arguments[0]] = arguments[1]
                         else:
@@ -1053,45 +1063,45 @@ class OSC2Scenario(BasicScenario):
                         location_modifiers.append(modifier_ins)
 
                     elif modifier_name == 'along':
-                        modifier_ins = AlongModifier(actor, modifier_name)
-                        keyword_args = {}
-                        if isinstance(arguments, list):
-                            arguments = OSC2Helper.flat_list(arguments)
-                            for arg in arguments:
-                                if isinstance(arg, tuple):
-                                    keyword_args[arg[0]] = arg[1]
-                                else:
-                                    keyword_args["route"] = str(arg)
-                        elif isinstance(arguments, Path):#存在疑问，route是否与Path同含义
-                            keyword_args["route"] = arguments
-                        else:
-                            raise NotImplementedError(
-                                f"no implement argument of {modifier_name}"
-                            )
-                        modifier_ins.set_args(keyword_args)
-                        # 不确定
-                        speed_modifiers.append(modifier_ins)
+                        pass
+                        # modifier_ins = AlongModifier(actor, modifier_name)
+                        # keyword_args = {}
+                        # if isinstance(arguments, list):
+                        #     arguments = OSC2Helper.flat_list(arguments)
+                        #     for arg in arguments:
+                        #         if isinstance(arg, tuple):
+                        #             keyword_args[arg[0]] = arg[1]
+                        #         else:
+                        #             keyword_args["route"] = str(arg)
+                        # elif isinstance(arguments, Path):#存在疑问，route是否与Path同含义
+                        #     keyword_args["route"] = arguments
+                        # else:
+                        #     raise NotImplementedError(
+                        #         f"no implement argument of {modifier_name}"
+                        #     )
+                        # modifier_ins.set_args(keyword_args)
+                        # speed_modifiers.append(modifier_ins)
 
                     # 不知道和alone的区别在哪，一个是现有道路，另一个是预定轨迹？
                     elif modifier_name == 'along_trajectory':
-                        modifier_ins = AlongTrajectoryModifier(actor, modifier_name)
-                        keyword_args = {}
-                        if isinstance(arguments, list):
-                            arguments = OSC2Helper.flat_list(arguments)
-                            for arg in arguments:
-                                if isinstance(arg, tuple):
-                                    keyword_args[arg[0]] = arg[1]
-                                else:
-                                    keyword_args["trajectory"] = str(arg)
-                        elif isinstance(arguments, Path):  # 存在疑问，route是否与Path同含义
-                            keyword_args["trajectory"] = arguments
-                        else:
-                            raise NotImplementedError(
-                                f"no implement argument of {modifier_name}"
-                            )
-                        modifier_ins.set_args(keyword_args)
-                        # 不确定
-                        speed_modifiers.append(modifier_ins)
+                        pass
+                        # modifier_ins = AlongTrajectoryModifier(actor, modifier_name)
+                        # keyword_args = {}
+                        # if isinstance(arguments, list):
+                        #     arguments = OSC2Helper.flat_list(arguments)
+                        #     for arg in arguments:
+                        #         if isinstance(arg, tuple):
+                        #             keyword_args[arg[0]] = arg[1]
+                        #         else:
+                        #             keyword_args["trajectory"] = str(arg)
+                        # elif isinstance(arguments, Path):  # 存在疑问，route是否与Path同含义
+                        #     keyword_args["trajectory"] = arguments
+                        # else:
+                        #     raise NotImplementedError(
+                        #         f"no implement argument of {modifier_name}"
+                        #     )
+                        # modifier_ins.set_args(keyword_args)
+                        # speed_modifiers.append(modifier_ins)
 
                     elif modifier_name == 'distance':
                         modifier_ins = DistanceModifier(actor, modifier_name)
