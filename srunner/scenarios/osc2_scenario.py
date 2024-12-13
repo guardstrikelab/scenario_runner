@@ -20,6 +20,7 @@ from srunner.osc2.symbol_manager.parameter_symbol import ParameterSymbol
 from srunner.osc2.utils.log_manager import (LOG_INFO, LOG_ERROR, LOG_WARNING)
 from srunner.osc2.utils.relational_operator import RelationalOperator
 from srunner.osc2_dm.physical_types import Physical, Range
+import srunner.osc2_stdlib.vehicle as vehicles
 from srunner.osc2_stdlib.path import Path
 
 # from sqlalchemy import true
@@ -1182,6 +1183,7 @@ class OSC2Scenario(BasicScenario):
             if (
                 method_scope is None
                 and modifier_name not in dir(self.father_ins.config.path)
+                and modifier_name not in dir(vehicles.Vehicle)
                 and modifier_name
                 not in (
                     'speed', 'lane', 'position', 'acceleration', 'keep_lane', 'change_speed', 'change_lane',

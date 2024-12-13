@@ -1,5 +1,11 @@
 import basic.osc
 
+type angle is SI(rad: 1)
+unit degree of angle is SI(rad: 1, factor: 0.01745329252)
+unit deg    of angle is SI(rad: 1, factor: 0.01745329252)
+unit radian of angle is SI(rad: 1, factor: 1)
+unit rad    of angle is SI(rad: 1, factor: 1)
+
 scenario top:
     path: Path
     path.set_map("Town04")
@@ -7,6 +13,7 @@ scenario top:
 
     ego_vehicle: Model3
     person: Walker02
+    ego_vehicle.set_color(blue)
     ego_vehicle.set_position(x:255.0m, y:-204.7m, z:0.0m, pitch:0.0rad, yaw:88.4rad, roll:0.0rad)
     person.set_position(x:255.0m, y:-200.7m, z:0.0m, pitch:0.0rad, yaw:88.4rad, roll:0.0rad)
 
