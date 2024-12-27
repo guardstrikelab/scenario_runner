@@ -32,7 +32,7 @@ from srunner.osc2_stdlib.modifier import (
     LaneModifier,
     PositionModifier,
     SpeedModifier,
-    LateralModifier, YawModifier, OrientationModifier, AlongModifier, AlongTrajectoryModifier, DistanceModifier,
+    LateralModifier, YawModifier, OrientationModifier, DistanceModifier,
     PhysicalMovementModifier, AvoidCollisionsModifier,
 )
 

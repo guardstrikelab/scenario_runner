@@ -13,13 +13,13 @@ scenario top:
     path.set_map("Town04")    # specify map to use in this test
     path.path_min_driving_lanes(3)         # Path should have at least two lanes
 
-    environment : Environment
+    environment: Environment
     #environment.clouds(8)
     #environment.air(80)
     #environment.rain(20mmph)
     #environment.wind(40mps)
-    environment.fog(5m)
-    #environment.assign_celestial_position(moon, 45deg, 90deg)
+    #environment.fog(5m)
+    environment.assign_celestial_position(moon, 45deg, 90deg)
 
     ego_vehicle: Model3                # ego car
     npc: Rubicon               # The other car
