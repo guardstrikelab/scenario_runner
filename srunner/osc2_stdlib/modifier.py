@@ -239,60 +239,60 @@ class OrientationModifier(Modifier):
             )
 
 
-class AlongModifier(Modifier):
-    def __init__(self, actor_name: str, name: str) -> None:
-        super().__init__(actor_name, name)
-
-    def get_route(self):
-        return self.args["route"]
-
-    def get_start(self):
-        start_offset = self.args["start_offset"]
-        if isinstance(start_offset, Physical):
-            return start_offset
-        else:
-            print(
-                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
-            )
-            sys.exit(1)
-
-    def get_end(self):
-        end_offset = self.args["end_offset"]
-        if isinstance(end_offset, Physical):
-            return end_offset
-        else:
-            print(
-                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
-            )
-            sys.exit(1)
-
-
-class AlongTrajectoryModifier(Modifier):
-    def __init__(self, actor_name: str, name: str) -> None:
-        super().__init__(actor_name, name)
-
-    def get_trajectory(self):
-        return self.args["trajectory"]
-
-    def get_start(self):
-        start_offset = self.args["start_offset"]
-        if isinstance(start_offset, Physical):
-            return start_offset
-        else:
-            print(
-                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
-            )
-            sys.exit(1)
-
-    def get_end(self):
-        end_offset = self.args["end_offset"]
-        if isinstance(end_offset, Physical):
-            return end_offset
-        else:
-            print(
-                "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
-            )
-            sys.exit(1)
+# class AlongModifier(Modifier):
+#     def __init__(self, actor_name: str, name: str) -> None:
+#         super().__init__(actor_name, name)
+#
+#     def get_route(self):
+#         return self.args["route"]
+#
+#     def get_start(self):
+#         start_offset = self.args["start_offset"]
+#         if isinstance(start_offset, Physical):
+#             return start_offset
+#         else:
+#             print(
+#                 "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+#             )
+#             sys.exit(1)
+#
+#     def get_end(self):
+#         end_offset = self.args["end_offset"]
+#         if isinstance(end_offset, Physical):
+#             return end_offset
+#         else:
+#             print(
+#                 "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+#             )
+#             sys.exit(1)
+#
+#
+# class AlongTrajectoryModifier(Modifier):
+#     def __init__(self, actor_name: str, name: str) -> None:
+#         super().__init__(actor_name, name)
+#
+#     def get_trajectory(self):
+#         return self.args["trajectory"]
+#
+#     def get_start(self):
+#         start_offset = self.args["start_offset"]
+#         if isinstance(start_offset, Physical):
+#             return start_offset
+#         else:
+#             print(
+#                 "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+#             )
+#             sys.exit(1)
+#
+#     def get_end(self):
+#         end_offset = self.args["end_offset"]
+#         if isinstance(end_offset, Physical):
+#             return end_offset
+#         else:
+#             print(
+#                 "[Error] 'distance' parameter of PositionModifier must be 'Physical' type"
+#             )
+#             sys.exit(1)
 
 
 class DistanceModifier(Modifier):
